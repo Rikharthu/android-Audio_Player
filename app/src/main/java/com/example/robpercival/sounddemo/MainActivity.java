@@ -13,8 +13,13 @@ import android.media.MediaPlayer;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 
 public class MainActivity extends Activity {
@@ -24,6 +29,8 @@ public class MainActivity extends Activity {
 
     MediaPlayer mplayer;
     private ListView tracksLv;
+    private SeekBar audioSb;
+    private TextView textView;
 
     public void playAudio(View view) {
 
@@ -43,9 +50,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tracksLv= (ListView) findViewById(R.id.track_lv);
 
-        mplayer = MediaPlayer.create(this, R.raw.laugh);
+        tracksLv= (ListView) findViewById(R.id.track_lv);
+        audioSb= (SeekBar) findViewById(R.id.audio_seek_bar);
+        textView= (TextView) findViewById(R.id.textView);
+
+        mplayer = MediaPlayer.create(this, R.raw.sfagnum);
 
         tracks=new ArrayList<>();
         // request all songs
@@ -77,6 +87,38 @@ public class MainActivity extends Activity {
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, titles);
         tracksLv.setAdapter(itemsAdapter);
+
+        audioSb.setMax(mplayer.getDuration());
+        audioSb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                if(b) // initiated by the user
+                    mplayer.seekTo(i);
+                int currentTime=mplayer.getCurrentPosition();
+                String time = String.format("%d:%02d",
+                        TimeUnit.MILLISECONDS.toMinutes(currentTime),
+                        TimeUnit.MILLISECONDS.toSeconds(currentTime) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(currentTime))
+                );
+                textView.setText(time);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                audioSb.setProgress(mplayer.getCurrentPosition());
+            }
+        },0,20);
 
     }
 
